@@ -4,6 +4,9 @@
  Copyright 2011 Alex Hiam
  This code released under the GNU General Public License v3
  
+ Feel free to send any feedback or suggestions:
+  wampumphysics@gmail.com
+ 
  Python library for the Chumby Hacker Board v1 to gain easy access to the 
  programmable registers, as well as support for a Nokia 5110 graphic lcd. 
  
