@@ -211,11 +211,13 @@ class CHB:
                  #"PM4" : [[3, 0x30000000], 1, 0x40000000]
                 }
                 #**********************************************
-  # Fix this!-> # For some reason when I include any of the pins
+                # For some reason when I include any of the pins
                 # that I have commented out, the chumby reboots   
                 # when _activatePins() is executed!
                 #**********************************************
-                  
+             # -note: problem identified (I made a dumb mistake!)
+             #  will fix and update soon
+                
                 
   def _setCmds(self):
     """ Creates simple to call commands for setting pin states.  """
