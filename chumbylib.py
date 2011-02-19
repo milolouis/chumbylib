@@ -1,5 +1,5 @@
 """
- chumbylib.py  | v1.0 beta
+ chumbylib.py  | v1.0 beta  |  2/11
  
  Copyright 2011 Alex Hiam
  This code released under the GNU General Public License v3

@@ -1,0 +1,22 @@
+
+ - chumbylib.py v1.0 beta readme -
+
+This program is meant to provide an extensive and easy to use library
+for the programmable registers on the Chumby Hacker Board.
+
+GPIO functions are used as follows:
+
+>>> chb = CHB()
+>>> chb.setOut('D5')    # must be set as out before writing
+>>> chb.write('D5',1)   # high
+>>> chb.write('D5',0)   # low
+
+All pins are labeled as they are on the CHB. 
+Only the 2x13 male header is currently supported.
+
+
+
+
+
+Code written and released by Alex Hiam - Wampum Physics - 2011
+wampumphysics@gmail.com
