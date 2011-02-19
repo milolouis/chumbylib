@@ -8,10 +8,12 @@
  programmable registers, as well as support for a Nokia 5110 graphic lcd. 
  
  Currently only supports pins on the 2x13 header, but they're easy to add. 
+ Refer to chapter 37 of processor datasheet:
+  http://cache.freescale.com/files/dsp/doc/ref_manual/IMX23RM.pdf
 
  Much thanks to madox who wrote some similar python code for the Infocast that
- I referenced for this project. I was had been using regutil to set pins before 
- I found it; madox worked out the kinks of writing straight to the mem file from
+ I referenced for this project. I had been using regutil to set pins before I 
+ found it; madox worked out the kinks of writing straight to the mem file from
  python. Check out his code here:
   http://code.google.com/p/madox/source/browse/trunk/chumby/chumby.py?r=5
   http://www.madox.net/
@@ -140,16 +142,21 @@ class CHB:
   
   def _setMem(self, loc, value):
     """
-     Sets mem[address] to value. 
+     Sets mem[address] to value.
+     -note: I started had these lines at the start of this function:
+       reg = self._getMem(loc)  
+       reg |= value
+     and it calls to write were effecting multiple pin. It turns out
+     that the i.MX23RM is set up to maintain the states of its registers.
+     You only high bits will cause change. 
     """ 
-    #reg = self._getMem(loc)
-    #reg |= value
     loc = self.reg_cmd[loc]
     self.mem[loc:loc+4] = self._pack_32bit(value)
   
   
+
   def _getMem(self, loc):
-    """ Returns list of 32-bits from loc in mem file. """
+    """ Returns int of 32-bits from loc in mem file. """
     loc = self.reg_cmd[loc]
     packed = self.mem[loc:loc+4]
     return struct.unpack("<L", packed)[0]
@@ -176,8 +183,8 @@ class CHB:
   def _pins(self):
     """ Creates dictionary of pins. """
     # pin muxsel, bank, and address by name on CHB silkscreen -
-    # pins["D0"[0]] = [muxsel, mux bits],pins["D0"[1]] = bank number, 
-    # pins["D0"[2]] = address.
+    # pins["D0"][0] = [muxsel, mux bits],pins["D0"][1] = bank number, 
+    # pins["D0"][2] = address.
     # note - Despite their names, I'm configuring all these pins as
     # GPIOs for now, although I plan to update this to allow at least
     # analog input functionality. 
