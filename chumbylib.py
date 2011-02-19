@@ -188,9 +188,9 @@ class CHB:
     # pin muxsel, bank, and address by name on CHB silkscreen -
     # pins["D0"][0] = [muxsel, mux bits],pins["D0"][1] = bank number, 
     # pins["D0"][2] = address.
-    # note - Despite their names, I'm configuring all these pins as
-    # GPIOs for now, although I plan to update this to allow at least
-    # analog input functionality. 
+    # note - Despite their names, I'm just configuring all these pins as
+    # GPIOs for now.
+    
     self.pins = { "D0" : [[0, 0x0003],     0, 0x00000001],
                   "D1" : [[0, 0x000c],     0, 0x00000002],
                   "D2" : [[0, 0x0030],     0, 0x00000004],
@@ -200,24 +200,12 @@ class CHB:
                   "D6" : [[0, 0x3000],     0, 0x00000040],
                   "D7" : [[0, 0xc000],     0, 0x00000080], 
                  "SCL" : [[1, 0x30000000], 0, 0x40000000],
-                 "SDA" : [[1, 0xc0000000], 0, 0x80000000],
-                 # "A2" : [[4, 0x00c00000], 2, 0x00000800],
-                 # "A3" : [[4, 0x03000000], 2, 0x00001000],
-                 # "A4" : [[4, 0x0c000000], 2, 0x00002000],
-                 # "A5" : [[4, 0x30000000], 2, 0x00004000],
-                 #"PM1" : [[3, 0x00c00000], 1, 0x08000000]
-                 #"PM2" : [[3, 0x03000000], 1, 0x10000000],
-                 #"PM3" : [[3, 0x0c000000], 1, 0x20000000],
-                 #"PM4" : [[3, 0x30000000], 1, 0x40000000]
-                }
-                #**********************************************
-                # For some reason when I include any of the pins
-                # that I have commented out, the chumby reboots   
-                # when _activatePins() is executed!
-                #**********************************************
-             # -note: problem identified (I made a dumb mistake!)
-             #  will fix and update soon
-                
+                 "SDA" : [[1, 0xc0000000], 0, 0x80000000] }
+    
+    # Pins labeled A2-5 are LRADC pins - I have yet to get these up and running.
+    # It seems as if they cannot be configured to GPIO.
+    # Not yet sure about the PM pins yet
+    
                 
   def _setCmds(self):
     """ Creates simple to call commands for setting pin states.  """
