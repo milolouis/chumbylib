@@ -1,7 +1,7 @@
 """
- chumbylib.py  | v1.0 beta  |  2/11
+ chumbylib.py  | v1.0 beta  |  2/11  |  Alex Hiam
  
- Copyright 2011 Alex Hiam
+ 
  This code released under the GNU General Public License v3
  
  Feel free to send any feedback or suggestions:
