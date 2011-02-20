@@ -54,8 +54,8 @@ class CHB:
   def __init__(self, mux_to_activate=[1]*7):
     # Offsets:
     self.mmap_offset = 0x7FFFF000  # Maximum ofset mmap will take
+    self.PINCTRL_offset = 0x80018000 - self.mmap_offset;
     file = open("/dev/mem", "r+b")
-    mmap_size = (0x2c + 4) + 0x80018000 - self.mmap_offset
     self.mem = mmap(file.fileno(), 0x20000, offset=self.mmap_offset)
     self._pins()
     self._setCmds()
