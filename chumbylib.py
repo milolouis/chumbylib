@@ -294,6 +294,7 @@ class LCD:
   def clear(self):
     for i in range(84*6):
       self.write(0x00)
+    self.xy(0, 0)
 
   def xy(self, x, y):
     """ 
