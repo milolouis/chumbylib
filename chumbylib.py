@@ -292,6 +292,7 @@ class LCD:
     self.chb.write(self.lcd["sce"], 1)
 
   def clear(self):
+    self.xy(0, 0)
     for i in range(84*6):
       self.write(0x00)
     self.xy(0, 0)
