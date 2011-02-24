@@ -94,7 +94,7 @@ class CHB:
   def setOut(self, pin, pull=0):
     """
      Sets given pin to an output and updates status lists.
-     Pullup resister in enabled or disabled by pull (0 or 1).
+     Pullup resister in enabled or disabled by pull (1 or 0).
     """
     try: 
       pinVals = self.pins[pin]
@@ -110,10 +110,10 @@ class CHB:
     if pin in self.lcdpins: self.lcdpins.remove(pin)
     
     
-  def setIn(self, pin, pull=0):
+  def setIn(self, pin, pull=1):
     """
      Sets given pin to an input and updates status lists.
-     Pullup resister in enabled or disabled by pull (0 or 1).
+     Pullup resister in enabled or disabled by pull (1 or 0).
     """
     try: 
       pinVals = self.pins[pin]
