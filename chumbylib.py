@@ -4,7 +4,7 @@
  
  This code released under the GNU General Public License v3
  
- Feel free to send any feedback or suggestions:
+ Feel free to send any questions, feedback, or suggestions to:
   wampumphysics@gmail.com
  
  Python library for the Chumby Hacker Board v1 to gain easy access to the 
@@ -59,7 +59,7 @@ class CHB:
     self.mem = mmap(file.fileno(), 0x20000, offset=self.mmap_offset)
     self._pins()
     self._setCmds()
-    self._activatePins()
+    self._gpio(["D0","D1","D2","D3","D4","D5","D6","D7","SCL","SDA"])
     # To keep track of what's what:
     self.din = []
     self.dout = []
@@ -164,9 +164,9 @@ class CHB:
     return struct.unpack("<L", packed)[0]
     
   
-  def _activatePins(self):
-    """ Sets all pins in self.pins to GPIO. """
-    for i in self.pins:
+  def _gpio(self, pins):
+    """ Sets all given pins to GPIO. """
+    for i in pins:
       self._setMem(self.muxsel % self.pins[i][0][0], self.pins[i][0][1])
         
   
