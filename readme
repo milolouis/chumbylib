@@ -1,8 +1,11 @@
 
  - chumbylib.py v1.0 beta readme -
 
-This program is meant to provide an extensive and easy to use library
-for the programmable registers on the Chumby Hacker Board.
+This program is meant to provide an easy to use library for the
+programmable registers on the Chumby Hacker Board.
+
+As of yet, only GPIO pins are supported, but ADC support will be
+added very soon, with I2C PWM to follow. 
 
 GPIO functions are used as follows:
 
@@ -21,8 +24,9 @@ LCD example:
  
 
 All pins are labeled as they are on the CHB. 
-Only the 2x13 male header is currently supported.
 
+Note- There are a few duplicate pins between the 2x13 and the 
+      2x22 headers, namely the ADC pins. 
 
 
 

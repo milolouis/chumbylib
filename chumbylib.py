@@ -56,11 +56,9 @@ class CHB:
     self.mmap_offset = 0x7FFFF000  # Maximum ofset mmap will take
     self.PINCTRL_offset = 0x80018000 - self.mmap_offset;
     file = open("/dev/mem", "r+b")
-    self.mem = mmap(file.fileno(), 0x20000, offset=self.mmap_offset)
+    self.mem = mmap(file.fileno(), 0x38170, offset=self.mmap_offset)
     self._pins()
     self._setCmds()
-    self._gpio(["D0","D1","D2","D3","D4","D5","D6","D7","SCL","SDA"])
-    # To keep track of what's what:
     self.din = []
     self.dout = []
     self.lcdpins = []
@@ -69,7 +67,8 @@ class CHB:
   def write(self, pin, state):
     """ Sets given pin to state if pin not in input list.  """
     try: 
-      pinVals = self.pins[pin]
+      pin = pin.upper()
+      pinVals = self.dPins[pin]
     except:
       return 
     if (pin in self.din) or (pin in self.lcdpins) : return
@@ -82,7 +81,8 @@ class CHB:
   def read(self, pin):
     """ Returns given pin to state if pin not in output list.  """
     try: 
-      pinVals = self.pins[pin]
+      pin = pin.upper()
+      pinVals = self.dPins[pin]
     except:
       return 
     if (pin in self.dout) or (pin in self.lcdpins): return None
@@ -97,9 +97,11 @@ class CHB:
      Pullup resister in enabled or disabled by pull (1 or 0).
     """
     try: 
-      pinVals = self.pins[pin]
+      pin = pin.upper()
+      pinVals = self.dPins[pin]
     except:
       return
+    self._gpio(pin)
     self._setMem(self.doe_set % pinVals[1], pinVals[2])
     if pull:
       self._setMem(self.pull_set % pinVals[1], pinVals[2])
@@ -116,10 +118,13 @@ class CHB:
      Pullup resister in enabled or disabled by pull (1 or 0).
     """
     try: 
-      pinVals = self.pins[pin]
+      pin = pin.upper()
+      pinVals = self.dPins[pin]
     except:
+      print ' *Invalid digital pin\n' 
       return
     self.din.append(pin)
+    self._gpio(pin)
     self._setMem(self.doe_clr % pinVals[1], pinVals[2])
     self._setMem(self.din_set % pinVals[1], pinVals[2])
     if pull:
@@ -135,10 +140,17 @@ class CHB:
     s = "  inputs: %s \n outputs: %s" % (self.din, self.dout)
     if self.lcdpins: s += " \n     lcd: %s" % self.lcdpins
     return s
-    
+   
+      
+  def _gpio(self, pin):
+    """ Sets all given pins to GPIO. """
+    self._setMem(self.muxsel % self.dPins[pin][0][0], self.dPins[pin][0][1])
+        
   
   def startLcd(self, pins=['D0','D1','D2','D3','D4']):
-    """ Creates lcd instance with given pins. """
+    """ Creates lcd instance with given pins - [SCLK, DN, D/C, RST, SCE]. """
+    for i in range(len(pins)): 
+      pins[i] = pins[i].upper()
     self.lcd = LCD(self, pins)
   
   
@@ -155,20 +167,13 @@ class CHB:
     loc = self.reg_cmd[loc]
     self.mem[loc:loc+4] = self._pack_32bit(value)
   
-  
-
+ 
   def _getMem(self, loc):
     """ Returns int of 32-bits from loc in mem file. """
     loc = self.reg_cmd[loc]
     packed = self.mem[loc:loc+4]
     return struct.unpack("<L", packed)[0]
     
-  
-  def _gpio(self, pins):
-    """ Sets all given pins to GPIO. """
-    for i in pins:
-      self._setMem(self.muxsel % self.pins[i][0][0], self.pins[i][0][1])
-        
   
   def _pack_32bit(self, value):
     """
@@ -183,14 +188,13 @@ class CHB:
     
     
   def _pins(self):
-    """ Creates dictionary of pins. """
+    """ Creates dictionaries of pins by function. """
+    # Digital pins:
     # pin muxsel, bank, and address by name on CHB silkscreen -
-    # pins["D0"][0] = [muxsel, mux bits],pins["D0"][1] = bank number, 
-    # pins["D0"][2] = address.
-    # note - Despite their names, I'm just configuring all these pins as
-    # GPIOs for now.
-    
-    self.pins = { "D0" : [[0, 0x0003],     0, 0x00000001],
+    # self.dpins['pin'][0] = [muxsel, mux bits]
+    # self.dpins['pin'][1] = bank number
+    # self.dpins['pin'][2] = address.
+    self.dPins = {"D0" : [[0, 0x0003],     0, 0x00000001],
                   "D1" : [[0, 0x000c],     0, 0x00000002],
                   "D2" : [[0, 0x0030],     0, 0x00000004],
                   "D3" : [[0, 0x00c0],     0, 0x00000008],
@@ -199,11 +203,30 @@ class CHB:
                   "D6" : [[0, 0x3000],     0, 0x00000040],
                   "D7" : [[0, 0xc000],     0, 0x00000080], 
                  "SCL" : [[1, 0x30000000], 0, 0x40000000],
-                 "SDA" : [[1, 0xc0000000], 0, 0x80000000] }
+                 "SDA" : [[1, 0xc0000000], 0, 0x80000000],
+                  "B0" : [[2, 0x0003],     1, 0x00000001],
+                  "B1" : [[2, 0x000c],     1, 0x00000002],
+                  "B2" : [[2, 0x0030],     1, 0x00000004],
+                  "B3" : [[2, 0x00c0],     1, 0x00000008],
+                  "B4" : [[2, 0x0300],     1, 0x00000010],
+                  "B5" : [[2, 0x0c00],     1, 0x00000020],
+                  "G0" : [[2, 0x3000],     1, 0x00000040],
+                  "G1" : [[2, 0xc000],     1, 0x00000080],
+                  "G2" : [[2, 0x30000],    1, 0x00000100],
+                  "G3" : [[2, 0xc0000],    1, 0x00000200],
+                  "G4" : [[2, 0x300000],   1, 0x00000400],
+                  "G5" : [[2, 0xc00000],   1, 0x00000800],
+                  "R0" : [[2, 0x3000000],  1, 0x00001000],
+                  "R1" : [[2, 0xc000000],  1, 0x00002000],
+                  "R2" : [[2, 0x30000000], 1, 0x00004000],
+                  "R3" : [[2, 0xc0000000], 1, 0x00008000],
+                  "R4" : [[3, 0x0003],     1, 0x00000001],
+                  "R5" : [[3, 0x000c],     1, 0x00000002] }
+                  
+    # ADC pins:
+    # coming soon
+    self.aPins = {}
     
-    # Pins labeled A2-5 are LRADC pins - I have yet to get these up and running.
-    # It seems as if they cannot be configured to GPIO.
-    # Not yet sure about the PM pins yet
     
                 
   def _setCmds(self):
@@ -220,7 +243,6 @@ class CHB:
     self.din_clr = "HW_PINCTRL_DIN%i_CLR"
     self.pull_set = "HW_PINCTRL_PULL%i_SET"
     self.pull_clr = "HW_PINCTRL_PULL%i_CLR"
-    
     
     self.reg_cmd = { "HW_PINCTRL_MUXSEL0_SET" : 0x104 + self.PINCTRL_offset,
                      "HW_PINCTRL_MUXSEL1_SET" : 0x114 + self.PINCTRL_offset,
@@ -274,7 +296,18 @@ class LCD:
     self.chb = chb
     self.pins = pins
     self._lcdInit()
+    self._data()
     
+  def string(self, s):
+    """ Writes a string to the lcd. """
+    try:
+      for c in str(s):
+        for i in self.ascii[c]:
+          self.write(i)
+        self.write(0x00)
+
+    except: pass
+          
    
   def write(self, data, dc=1):
     """
@@ -331,3 +364,103 @@ class LCD:
     self.write(0x0c, 0)
     self.clear()
     
+  def _data(self):
+    """ Where to put ascii table, bitmaps, etc. """
+    # ascii characters -
+    # adapted from http://www.arduino.cc/playground/Code/PCD8544
+    #  to be a more python friendly (also took out the arrows)
+
+    self.ascii = {" " : [0x00, 0x00, 0x00, 0x00, 0x00], 
+                  "!" : [0x00, 0x00, 0x5f, 0x00, 0x00],
+                  '"' : [0x00, 0x07, 0x00, 0x07, 0x00],
+                  "#" : [0x14, 0x7f, 0x14, 0x7f, 0x14],
+                  "$" : [0x24, 0x2a, 0x7f, 0x2a, 0x12],
+                  "%" : [0x23, 0x13, 0x08, 0x64, 0x62],
+                  "&" : [0x36, 0x49, 0x55, 0x22, 0x50],
+                  "'" : [0x00, 0x05, 0x03, 0x00, 0x00],
+                  "(" : [0x00, 0x1c, 0x22, 0x41, 0x00],
+                  ")" : [0x00, 0x41, 0x22, 0x1c, 0x00],
+                  "*" : [0x14, 0x08, 0x3e, 0x08, 0x14],
+                  "+" : [0x08, 0x08, 0x3e, 0x08, 0x08],
+                  "," : [0x00, 0x50, 0x30, 0x00, 0x00],
+                  "-" : [0x08, 0x08, 0x08, 0x08, 0x08],
+                  "." : [0x00, 0x60, 0x60, 0x00, 0x00],
+                  "/" : [0x20, 0x10, 0x08, 0x04, 0x02],
+                  "0" : [0x3e, 0x51, 0x49, 0x45, 0x3e],
+                  "1" : [0x00, 0x42, 0x7f, 0x40, 0x00],
+                  "2" : [0x42, 0x61, 0x51, 0x49, 0x46],
+                  "3" : [0x21, 0x41, 0x45, 0x4b, 0x31],
+                  "4" : [0x18, 0x14, 0x12, 0x7f, 0x10],
+                  "5" : [0x27, 0x45, 0x45, 0x45, 0x39],
+                  "6" : [0x3c, 0x4a, 0x49, 0x49, 0x30],
+                  "7" : [0x01, 0x71, 0x09, 0x05, 0x03],
+                  "8" : [0x36, 0x49, 0x49, 0x49, 0x36],
+                  "9" : [0x06, 0x49, 0x49, 0x29, 0x1e],
+                  ":" : [0x00, 0x36, 0x36, 0x00, 0x00],
+                  ";" : [0x00, 0x56, 0x36, 0x00, 0x00],
+                  "<" : [0x08, 0x14, 0x22, 0x41, 0x00],
+                  "=" : [0x14, 0x14, 0x14, 0x14, 0x14],
+                  ">" : [0x00, 0x41, 0x22, 0x14, 0x08],
+                  "?" : [0x02, 0x01, 0x51, 0x09, 0x06],
+                  "@" : [0x32, 0x49, 0x79, 0x41, 0x3e],
+                  "A" : [0x7e, 0x11, 0x11, 0x11, 0x7e],
+                  "B" : [0x7f, 0x49, 0x49, 0x49, 0x36],
+                  "C" : [0x3e, 0x41, 0x41, 0x41, 0x22],
+                  "D" : [0x7f, 0x41, 0x41, 0x22, 0x1c],
+                  "E" : [0x7f, 0x49, 0x49, 0x49, 0x41],
+                  "F" : [0x7f, 0x09, 0x09, 0x09, 0x01],
+                  "G" : [0x3e, 0x41, 0x49, 0x49, 0x7a],
+                  "H" : [0x7f, 0x08, 0x08, 0x08, 0x7f],
+                  "I" : [0x00, 0x41, 0x7f, 0x41, 0x00],
+                  "J" : [0x20, 0x40, 0x41, 0x3f, 0x01],
+                  "K" : [0x7f, 0x08, 0x14, 0x22, 0x41],
+                  "L" : [0x7f, 0x40, 0x40, 0x40, 0x40],
+                  "M" : [0x7f, 0x02, 0x0c, 0x02, 0x7f],
+                  "N" : [0x7f, 0x04, 0x08, 0x10, 0x7f],
+                  "O" : [0x3e, 0x41, 0x41, 0x41, 0x3e],
+                  "P" : [0x7f, 0x09, 0x09, 0x09, 0x06],
+                  "Q" : [0x3e, 0x41, 0x51, 0x21, 0x5e],
+                  "R" : [0x7f, 0x09, 0x19, 0x29, 0x46],
+                  "S" : [0x46, 0x49, 0x49, 0x49, 0x31],
+                  "T" : [0x01, 0x01, 0x7f, 0x01, 0x01],
+                  "U" : [0x3f, 0x40, 0x40, 0x40, 0x3f],
+                  "V" : [0x1f, 0x20, 0x40, 0x20, 0x1f],
+                  "W" : [0x3f, 0x40, 0x38, 0x40, 0x3f],
+                  "X" : [0x63, 0x14, 0x08, 0x14, 0x63],
+                  "Y" : [0x07, 0x08, 0x70, 0x08, 0x07],
+                  "Z" : [0x61, 0x51, 0x49, 0x45, 0x43],
+                  "[" : [0x00, 0x7f, 0x41, 0x41, 0x00],
+                 "\\" : [0x02, 0x04, 0x08, 0x10, 0x20], # just writes 1, needs 2 because of backslash function
+                  "]" : [0x00, 0x41, 0x41, 0x7f, 0x00],
+                  "^" : [0x04, 0x02, 0x01, 0x02, 0x04],
+                  "_" : [0x40, 0x40, 0x40, 0x40, 0x40],
+                  "`" : [0x00, 0x01, 0x02, 0x04, 0x00],
+                  "a" : [0x20, 0x54, 0x54, 0x54, 0x78],
+                  "b" : [0x7f, 0x48, 0x44, 0x44, 0x38],
+                  "c" : [0x38, 0x44, 0x44, 0x44, 0x20],
+                  "d" : [0x38, 0x44, 0x44, 0x48, 0x7f],
+                  "e" : [0x38, 0x54, 0x54, 0x54, 0x18],
+                  "f" : [0x08, 0x7e, 0x09, 0x01, 0x02],
+                  "g" : [0x0c, 0x52, 0x52, 0x52, 0x3e],
+                  "h" : [0x7f, 0x08, 0x04, 0x04, 0x78],
+                  "i" : [0x00, 0x44, 0x7d, 0x40, 0x00],
+                  "j" : [0x20, 0x40, 0x44, 0x3d, 0x00],
+                  "k" : [0x7f, 0x10, 0x28, 0x44, 0x00],
+                  "l" : [0x00, 0x41, 0x7f, 0x40, 0x00],
+                  "m" : [0x7c, 0x04, 0x18, 0x04, 0x78],
+                  "n" : [0x7c, 0x08, 0x04, 0x04, 0x78],
+                  "o" : [0x38, 0x44, 0x44, 0x44, 0x38],
+                  "p" : [0x7c, 0x14, 0x14, 0x14, 0x08],
+                  "q" : [0x08, 0x14, 0x14, 0x18, 0x7c],
+                  "r" : [0x7c, 0x08, 0x04, 0x04, 0x08],
+                  "s" : [0x48, 0x54, 0x54, 0x54, 0x20],
+                  "t" : [0x04, 0x3f, 0x44, 0x40, 0x20],
+                  "u" : [0x3c, 0x40, 0x40, 0x20, 0x7c],
+                  "v" : [0x1c, 0x20, 0x40, 0x20, 0x1c],
+                  "w" : [0x3c, 0x40, 0x30, 0x40, 0x3c],
+                  "x" : [0x44, 0x28, 0x10, 0x28, 0x44],
+                  "y" : [0x0c, 0x50, 0x50, 0x50, 0x3c],
+                  "z" : [0x44, 0x64, 0x54, 0x4c, 0x44],
+                  "{" : [0x00, 0x08, 0x36, 0x41, 0x00],
+                  "|" : [0x00, 0x00, 0x7f, 0x00, 0x00],
+                  "}" : [0x00, 0x41, 0x36, 0x08, 0x00] }
